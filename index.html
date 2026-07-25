@@ -1909,9 +1909,17 @@ function AgendaApp() {
     // Evento de cancelamento do UID antigo (para reagendamento)
     const cancelEvent = cancelUid ? `BEGIN:VEVENT\r\nUID:${cancelUid}\r\nSEQUENCE:1\r\nDTSTAMP:${stamp}\r\nSTATUS:CANCELLED\r\nDTSTART:${dtStart}\r\nSUMMARY:Cancelado\r\nEND:VEVENT` : "";
     const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//BB Recovery//Agenda//PT\r\nCALSCALE:GREGORIAN\r\nMETHOD:${cancelUid ? "REQUEST" : "PUBLISH"}\r\n${cancelEvent ? cancelEvent + "\r\n" : ""}${newEvent}\r\nEND:VCALENDAR`;
-    const icsEncoded = encodeURIComponent(ics);
-    const dataUri = `data:text/calendar;charset=utf-8,${icsEncoded}`;
-    window.open(dataUri, "_blank");
+    const blob = new Blob([ics], {
+      type: "text/calendar;charset=utf-8"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bbrecovery-${name.replace(/\s+/g, "-")}-${date}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
   const saveAppointment = async (packOption = null) => {
     if (!form.name.trim() || !form.phone.trim() || !form.treatment) {
@@ -2012,12 +2020,14 @@ function AgendaApp() {
       });
       return;
     }
+    const dateStr = modal.date instanceof Date ? fmt(modal.date) : modal.date;
     const apptData = {
       ...form,
       price: apptPrice,
       duration: svc ? svc.duration : "",
-      date: fmt(modal.date),
-      hour: modal.hour
+      date: dateStr,
+      hour: modal.hour,
+      min: modal.min || 0
     };
     const newAppts = {
       ...appointments,
@@ -2030,14 +2040,14 @@ function AgendaApp() {
         ...newClients[existing],
         name: form.name,
         lastTreatment: form.treatment,
-        lastDate: fmt(modal.date)
+        lastDate: dateStr
       };
     } else {
       newClients.push({
         name: form.name,
         phone: form.phone,
         lastTreatment: form.treatment,
-        lastDate: fmt(modal.date)
+        lastDate: dateStr
       });
     }
     setAppointments(newAppts);
@@ -2052,13 +2062,13 @@ function AgendaApp() {
         price: apptPrice,
         duration: svc ? svc.duration : "",
         notes: form.notes || "",
-        date: fmt(modal.date),
+        date: dateStr,
         hour: modal.hour
       }), db.upsertClient({
         phone: form.phone,
         name: form.name,
         last_treatment: form.treatment,
-        last_date: fmt(modal.date)
+        last_date: dateStr
       })]);
     } catch (e) {
       console.error("Erro ao guardar:", e);
@@ -2150,7 +2160,7 @@ function AgendaApp() {
       treatment: form.treatment,
       duration: svc ? svc.duration : "60m",
       price: apptPrice,
-      date: fmt(modal.date),
+      date: dateStr,
       hour: modal.hour,
       min: modal.min || 0,
       notes: form.notes,
