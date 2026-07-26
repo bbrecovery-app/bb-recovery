@@ -1932,26 +1932,20 @@ function AgendaApp() {
     const dtEnd = `${y}${pad(m)}${pad(d)}T${pad(endHour)}${pad(endMin)}00`;
     const now = new Date();
     const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}Z`;
-
-    // UID determinístico — baseado no key da marcação para que seja sempre o mesmo
-    // Assim o reagendamento pode cancelar o evento anterior com certeza
     const uid = eventKey ? `bbrecovery-${eventKey.replace(/[^a-zA-Z0-9-]/g, "-")}@bbrecovery.pt` : `${stamp}-${Math.random().toString(36).slice(2)}@bbrecovery.pt`;
-    const newEvent = `BEGIN:VEVENT\r\nUID:${uid}\r\nSEQUENCE:0\r\nDTSTAMP:${stamp}\r\nDTSTART:${dtStart}\r\nDTEND:${dtEnd}\r\nSUMMARY:${name} – ${treatment}\r\nDESCRIPTION:Cliente: ${name}\\nServiço: ${treatment}\\nDuração: ${duration || ""}${notes ? "\\nNotas: " + notes : ""}\r\nLOCATION:B&B Recovery\\, Rua Amadeu Souza Cardoso LJ 91\\, B\\, 2870-198 Montijo\r\nBEGIN:VALARM\r\nTRIGGER:-PT60M\r\nACTION:DISPLAY\r\nDESCRIPTION:Lembrete: ${name} às ${fmtHour(hour, min || 0)}\r\nEND:VALARM\r\nEND:VEVENT`;
+    const cancelEvent = cancelUid ? `BEGIN:VEVENT\r\nUID:${cancelUid}\r\nSEQUENCE:1\r\nDTSTAMP:${stamp}\r\nSTATUS:CANCELLED\r\nDTSTART:${dtStart}\r\nSUMMARY:Cancelado\r\nEND:VEVENT\r\n` : "";
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BB Recovery//Agenda//PT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", cancelEvent.replace(/\r\n/g, "\n").trim(), "BEGIN:VEVENT", `UID:${uid}`, `DTSTAMP:${stamp}`, `DTSTART:${dtStart}`, `DTEND:${dtEnd}`, `SUMMARY:${name} - ${treatment}`, `DESCRIPTION:Cliente: ${name}. Servico: ${treatment}. Duracao: ${duration || ""}.${notes ? " Notas: " + notes : ""}`, "LOCATION:B&B Recovery - Rua Amadeu Souza Cardoso LJ 91 B 2870-198 Montijo", "BEGIN:VALARM", "TRIGGER:-PT60M", "ACTION:DISPLAY", `DESCRIPTION:Lembrete: ${name} as ${pad(startHour)}:${pad(startMin)}h`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\n");
 
-    // Evento de cancelamento do UID antigo (para reagendamento)
-    const cancelEvent = cancelUid ? `BEGIN:VEVENT\r\nUID:${cancelUid}\r\nSEQUENCE:1\r\nDTSTAMP:${stamp}\r\nSTATUS:CANCELLED\r\nDTSTART:${dtStart}\r\nSUMMARY:Cancelado\r\nEND:VEVENT` : "";
-    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//BB Recovery//Agenda//PT\r\nCALSCALE:GREGORIAN\r\nMETHOD:${cancelUid ? "REQUEST" : "PUBLISH"}\r\n${cancelEvent ? cancelEvent + "\r\n" : ""}${newEvent}\r\nEND:VCALENDAR`;
-    const blob = new Blob([ics], {
-      type: "text/calendar;charset=utf-8"
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bbrecovery-${name.replace(/\s+/g, "-")}-${date}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Método mais compatível com iOS — link directo
+    const encoded = btoa(unescape(encodeURIComponent(ics)));
+    const dataUri = `data:text/calendar;base64,${encoded}`;
+    const link = document.createElement("a");
+    link.setAttribute("href", dataUri);
+    link.setAttribute("download", `bbrecovery-${date}.ics`);
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => document.body.removeChild(link), 1000);
   };
   const saveAppointment = async (packOption = null) => {
     if (!form.name.trim() || !form.phone.trim() || !form.treatment) {
