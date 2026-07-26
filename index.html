@@ -436,70 +436,102 @@ const DAYS_PT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTHS_PT = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 // Catálogo completo B&B Recovery
 const SERVICES = [
-// Tratamentos individuais
+// Tratamentos
 {
-  name: "Massagem Desportiva (zona)",
-  duration: "50m",
-  price: 50,
-  category: "Tratamento"
-}, {
-  name: "Massagem Desportiva (corpo inteiro)",
-  duration: "70m",
-  price: 75,
-  category: "Tratamento"
-}, {
-  name: "Patologias (Tecarterapia / Punção Seca)",
+  name: "Massagem Desportiva (zona) / Patologias",
   duration: "50m",
   price: 55,
   category: "Tratamento"
 }, {
-  name: "Terapia de Contraste (Crioterapia & Sauna)",
+  name: "Massagem Desportiva (corpo inteiro)",
+  duration: "1h10",
+  price: 75,
+  category: "Tratamento"
+}, {
+  name: "Terapia de Contraste (Crioterapia + Sauna Infravermelhos)",
   duration: "50m",
   price: 38,
   category: "Tratamento"
 }, {
   name: "Massagem Desportiva (zona) + Terapia de Contraste",
-  duration: "30m+30m",
+  duration: "1h",
   price: 70,
   category: "Tratamento"
 }, {
-  name: "Pack Recovery (Crioterapia + Sauna + Pressoterapia)",
-  duration: "60m",
+  name: "Protocolo Recovery (Crioterapia + Sauna + Pressoterapia)",
+  duration: "1h",
   price: 45,
   category: "Tratamento"
 }, {
-  name: "Crioterapia + Pressoterapia 30 Min",
-  duration: "40m",
-  price: 38,
+  name: "Protocolo Leg Ready (Massagem + Crioterapia + Pressoterapia)",
+  duration: "1h10",
+  price: 70,
   category: "Tratamento"
 }, {
-  name: "Terapia Leg Ready (Crioterapia + Pressoterapia + Massagem membros inferiores)",
-  duration: "40m+20m",
-  price: 70,
+  name: "Sessão de Câmara Hiperbárica (Oxigenoterapia)",
+  duration: "1h",
+  price: 90,
+  category: "Tratamento"
+}, {
+  name: "Protocolo Performance (Massagem Terapêutica + Câmara Hiperbárica)",
+  duration: "1h30",
+  price: 135,
+  category: "Tratamento"
+}, {
+  name: "Protocolo Recovery (Sala Recovery + Câmara Hiperbárica)",
+  duration: "2h",
+  price: 130,
+  category: "Tratamento"
+}, {
+  name: "Protocolo Recovery Premium (Massagem + Crioterapia + Câmara Hiperbárica)",
+  duration: "1h40",
+  price: 140,
+  category: "Tratamento"
+}, {
+  name: "LED Recovery Mask 15 min",
+  duration: "15m",
+  price: 20,
+  category: "Tratamento"
+}, {
+  name: "LED Recovery Mask 30 min",
+  duration: "30m",
+  price: 35,
   category: "Tratamento"
 },
 // Packs
 {
   name: "Pack 4 Sessões – Massagem Desportiva (zona)",
   duration: "4×50m",
-  price: 170,
+  price: 189,
   category: "Pack",
   sessions: 4
 }, {
+  name: "Pack 4 Sessões – Câmara Hiperbárica",
+  duration: "4×1h",
+  price: 306,
+  category: "Pack",
+  sessions: 4
+}, {
+  name: "Pack 8 Sessões – Câmara Hiperbárica",
+  duration: "8×1h",
+  price: 576,
+  category: "Pack",
+  sessions: 8
+}, {
   name: "Pack 4 Sessões – Sala Recovery",
-  duration: "4×60m",
+  duration: "4×1h",
   price: 153,
   category: "Pack",
   sessions: 4
 }, {
-  name: "Pack 4 Sessões – Recovery + Massagem 30/30mn",
-  duration: "4×60m",
+  name: "Pack 4 Sessões – Recovery + Massagem",
+  duration: "4×1h",
   price: 238,
   category: "Pack",
   sessions: 4
 }, {
-  name: "Pack 4 Sessões – Leg Ready 40/20mn",
-  duration: "4×60m",
+  name: "Pack 4 Sessões – Leg Ready",
+  duration: "4×1h",
   price: 238,
   category: "Pack",
   sessions: 4
