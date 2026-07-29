@@ -1908,44 +1908,34 @@ function AgendaApp() {
     });
     setClientSearch("");
   };
-  const generateICS = ({
+  const openCalendar = ({
     name,
     treatment,
     duration,
     date,
     hour,
     min = 0,
-    notes,
-    cancelUid = null,
-    eventKey = null
+    notes
   }) => {
     const [y, m, d] = date.split("-").map(Number);
+    const pad = n => String(n).padStart(2, "0");
+    const startMin = min || 0;
     const durationMatch = (duration || "60m").match(/(\d+)/);
     const durationMins = durationMatch ? parseInt(durationMatch[1]) : 60;
     const startHour = parseInt(hour);
     const endTotalMins = startHour * 60 + durationMins;
     const endHour = Math.floor(endTotalMins / 60);
     const endMin = endTotalMins % 60;
-    const pad = n => String(n).padStart(2, "0");
-    const startMin = min || 0;
     const dtStart = `${y}${pad(m)}${pad(d)}T${pad(startHour)}${pad(startMin)}00`;
     const dtEnd = `${y}${pad(m)}${pad(d)}T${pad(endHour)}${pad(endMin)}00`;
-    const now = new Date();
-    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}Z`;
-    const uid = eventKey ? `bbrecovery-${eventKey.replace(/[^a-zA-Z0-9-]/g, "-")}@bbrecovery.pt` : `${stamp}-${Math.random().toString(36).slice(2)}@bbrecovery.pt`;
-    const cancelEvent = cancelUid ? `BEGIN:VEVENT\r\nUID:${cancelUid}\r\nSEQUENCE:1\r\nDTSTAMP:${stamp}\r\nSTATUS:CANCELLED\r\nDTSTART:${dtStart}\r\nSUMMARY:Cancelado\r\nEND:VEVENT\r\n` : "";
-    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BB Recovery//Agenda//PT", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", cancelEvent.replace(/\r\n/g, "\n").trim(), "BEGIN:VEVENT", `UID:${uid}`, `DTSTAMP:${stamp}`, `DTSTART:${dtStart}`, `DTEND:${dtEnd}`, `SUMMARY:${name} - ${treatment}`, `DESCRIPTION:Cliente: ${name}. Servico: ${treatment}. Duracao: ${duration || ""}.${notes ? " Notas: " + notes : ""}`, "LOCATION:B&B Recovery - Rua Amadeu Souza Cardoso LJ 91 B 2870-198 Montijo", "BEGIN:VALARM", "TRIGGER:-PT60M", "ACTION:DISPLAY", `DESCRIPTION:Lembrete: ${name} as ${pad(startHour)}:${pad(startMin)}h`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\n");
-
-    // Método mais compatível com iOS — link directo
-    const encoded = btoa(unescape(encodeURIComponent(ics)));
-    const dataUri = `data:text/calendar;base64,${encoded}`;
-    const link = document.createElement("a");
-    link.setAttribute("href", dataUri);
-    link.setAttribute("download", `bbrecovery-${date}.ics`);
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => document.body.removeChild(link), 1000);
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: `${name} – ${treatment}`,
+      dates: `${dtStart}/${dtEnd}`,
+      details: `Cliente: ${name}\nServiço: ${treatment}\nDuração: ${duration || ""}${notes ? "\nNotas: " + notes : ""}`,
+      location: "B&B Recovery – Rua Amadeu Souza Cardoso LJ 91, B, 2870-198 Montijo"
+    });
+    window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, "_blank");
   };
   const saveAppointment = async (packOption = null) => {
     if (!form.name.trim() || !form.phone.trim() || !form.treatment) {
@@ -3977,7 +3967,7 @@ function AgendaApp() {
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const dateStr = typeof modal.date === "string" ? modal.date : fmt(modal.date);
-      generateICS({
+      openCalendar({
         name: modal.name,
         treatment: modal.treatment,
         duration: modal.duration,
@@ -3990,7 +3980,7 @@ function AgendaApp() {
       });
       setToast({
         type: "success",
-        msg: modal.isReschedule ? "Evento actualizado no calendário!" : "Evento exportado para o calendário!"
+        msg: modal.isReschedule ? "Evento actualizado no Google Calendar!" : "Evento adicionado ao Google Calendar!"
       });
     },
     style: {
@@ -4008,7 +3998,7 @@ function AgendaApp() {
       justifyContent: "center",
       gap: 8
     }
-  }, "📅 ", modal.isReschedule ? "Actualizar no Calendário" : "Adicionar ao Calendário"), /*#__PURE__*/React.createElement("button", {
+  }, "📅 ", modal.isReschedule ? "Actualizar no Google Calendar" : "Adicionar ao Google Calendar"), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       sendWhatsApp(modal);
       setModal(null);
@@ -4235,7 +4225,7 @@ function AgendaApp() {
       fontWeight: 700
     }
   }, "📆"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => generateICS({
+    onClick: () => openCalendar({
       name: modal.name,
       treatment: modal.treatment,
       duration: modal.duration,
