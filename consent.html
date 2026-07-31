@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consentimento Informado – B&B Recovery</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, "Inter", sans-serif; background: #f5f3ef; color: #1c2420; padding: 20px; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; max-width: 500px; margin: 0 auto; box-shadow: 0 2px 16px rgba(44,62,53,0.08); }
+    h1 { font-size: 18px; font-weight: 800; color: #2c3e35; margin-bottom: 4px; }
+    h2 { font-size: 14px; font-weight: 600; color: #6b7570; margin-bottom: 20px; }
+    .logo { text-align: center; margin-bottom: 20px; font-size: 22px; font-weight: 800; color: #2c3e35; }
+    .subtitle { text-align: center; font-size: 12px; color: #b8956a; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 24px; }
+    .field { margin-bottom: 14px; }
+    label { font-size: 11px; font-weight: 700; color: #6b7570; text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 5px; }
+    input { width: 100%; padding: 11px 14px; border: 1.5px solid #e8e3db; border-radius: 10px; font-size: 14px; font-family: inherit; background: #f5f3ef; color: #1c2420; outline: none; }
+    input:focus { border-color: #b8956a; }
+    .description { background: #f5f3ef; border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.6; color: #4a5550; margin: 16px 0; }
+    .check-item { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f0ede8; }
+    .check-item:last-child { border-bottom: none; }
+    .check-item input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0; accent-color: #2c3e35; cursor: pointer; }
+    .check-item span { font-size: 13px; line-height: 1.5; color: #1c2420; }
+    .sig-section { margin-top: 20px; }
+    .sig-label { font-size: 11px; font-weight: 700; color: #6b7570; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+    canvas { border: 1.5px solid #e8e3db; border-radius: 10px; background: #fff; width: 100%; touch-action: none; cursor: crosshair; }
+    .clear-btn { background: none; border: 1px solid #e8e3db; border-radius: 8px; padding: 6px 14px; font-size: 12px; color: #6b7570; cursor: pointer; margin-top: 6px; }
+    .submit-btn { width: 100%; background: #2c3e35; color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 20px; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error { background: #fdf0ee; border: 1px solid #c0392b30; border-radius: 10px; padding: 14px; color: #c0392b; font-size: 13px; text-align: center; margin: 20px 0; }
+    .success { background: #eef3f0; border: 1px solid #2c3e3530; border-radius: 10px; padding: 24px; color: #2c3e35; font-size: 15px; text-align: center; margin: 20px 0; }
+    .used { background: #fdf5f0; border: 1px solid #b8956a30; border-radius: 10px; padding: 24px; color: #b8956a; font-size: 15px; text-align: center; }
+    .loading { text-align: center; padding: 60px 20px; color: #6b7570; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🌿 B&B Recovery</div>
+  <div class="subtitle">Performance • Recovery • Longevity</div>
+  <div id="app"><div class="loading">A carregar...</div></div>
+</div>
+
+<script>
+const SB_URL = "https://aduxoajjhhrkzqyxbryr.supabase.co";
+const SB_KEY = "sb_publishable_S-jw7Q06DXRUkS_Ht5ZoEQ_CPzUv9Xs";
+
+const sbFetch = async (path, options = {}) => {
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "return=representation",
+      ...(options.headers || {}),
+    },
+  });
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+};
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get("token");
+
+let canvas, ctx, drawing = false, hasSignature = false;
+
+function initCanvas() {
+  canvas = document.getElementById("sigCanvas");
+  if (!canvas) return;
+  ctx = canvas.getContext("2d");
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.strokeStyle = "#1c2420";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+  };
+
+  canvas.addEventListener("mousedown", e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+  canvas.addEventListener("mousemove", e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; });
+  canvas.addEventListener("mouseup", () => drawing = false);
+  canvas.addEventListener("touchstart", e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+  canvas.addEventListener("touchmove", e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; }, { passive: false });
+  canvas.addEventListener("touchend", () => drawing = false);
+}
+
+function clearCanvas() {
+  if (!canvas) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSignature = false;
+}
+
+async function submit(consent) {
+  const name = document.getElementById("name").value.trim();
+  const dob = document.getElementById("dob").value.trim();
+  const checks = document.querySelectorAll(".check-item input[type=checkbox]");
+  const allChecked = Array.from(checks).every(c => c.checked);
+
+  if (!name) { alert("Por favor preenche o nome."); return; }
+  if (!dob) { alert("Por favor preenche a data de nascimento."); return; }
+  if (!allChecked) { alert("Por favor confirma todas as declarações."); return; }
+  if (!hasSignature) { alert("Por favor assina o documento."); return; }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "A guardar...";
+
+  const signatureData = canvas.toDataURL("image/png");
+
+  try {
+    await sbFetch(`consents?token=eq.${token}`, {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: JSON.stringify({
+        used: true,
+        signed_at: new Date().toISOString(),
+        signature_data: signatureData,
+        client_name: name,
+        client_dob: dob,
+      }),
+    });
+
+    document.getElementById("app").innerHTML = `
+      <div class="success">
+        <div style="font-size:48px;margin-bottom:16px">✅</div>
+        <div style="font-weight:800;font-size:18px;margin-bottom:8px">Consentimento assinado!</div>
+        <div style="font-size:13px;color:#6b7570">Obrigado ${name}. O documento foi guardado com sucesso.<br>Até breve na B&B Recovery! 🌿</div>
+      </div>`;
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "Assinar e Submeter";
+    alert("Erro ao guardar. Por favor tenta novamente.");
+  }
+}
+
+async function init() {
+  if (!token) {
+    document.getElementById("app").innerHTML = `<div class="error">Link inválido ou em falta.</div>`;
+    return;
+  }
+
+  try {
+    const rows = await sbFetch(`consents?token=eq.${token}&select=*`);
+    if (!rows || rows.length === 0) {
+      document.getElementById("app").innerHTML = `<div class="error">Consentimento não encontrado.</div>`;
+      return;
+    }
+
+    const c = rows[0];
+
+    if (c.used) {
+      document.getElementById("app").innerHTML = `
+        <div class="used">
+          <div style="font-size:48px;margin-bottom:16px">🔒</div>
+          <div style="font-weight:800;font-size:16px;margin-bottom:8px">Este link já foi utilizado</div>
+          <div style="font-size:13px">O consentimento já foi assinado e guardado.</div>
+        </div>`;
+      return;
+    }
+
+    const fmtDate = (d) => { if (!d) return ""; const [y,m,dd] = d.split("-"); return `${dd}/${m}/${y}`; };
+
+    document.getElementById("app").innerHTML = `
+      <h1>Consentimento Informado</h1>
+      <h2>Sessão de Oxigenoterapia Hiperbárica (1,5 ATA)</h2>
+
+      <div class="field">
+        <label>Nome</label>
+        <input type="text" id="name" value="${c.client_name || ""}" placeholder="Nome completo">
+      </div>
+      <div class="field">
+        <label>Data de Nascimento</label>
+        <input type="date" id="dob" value="${c.client_dob || ""}">
+      </div>
+      <div class="field">
+        <label>Contacto</label>
+        <input type="text" id="phone" value="${c.client_phone || ""}" readonly style="opacity:0.6">
+      </div>
+      <div class="field">
+        <label>Data da Sessão</label>
+        <input type="text" value="${fmtDate(c.appointment_date)}" readonly style="opacity:0.6">
+      </div>
+
+      <div class="description">
+        A sessão de Oxigenoterapia Hiperbárica consiste na permanência numa câmara pressurizada a 1,5 ATA, durante aproximadamente 60 minutos, com o objetivo de promover a recuperação física, otimizar a performance desportiva, contribuir para a gestão da inflamação, reduzir a fadiga e apoiar o bem-estar e a longevidade.<br><br>
+        Durante a sessão poderá sentir pressão nos ouvidos ou nos seios perinasais, semelhante à sentida durante uma viagem de avião. Caso sinta qualquer desconforto deverá informar imediatamente o terapeuta.
+      </div>
+
+      <div style="margin:16px 0">
+        <div class="check-item"><input type="checkbox"><span>Recebi informação clara sobre a sessão e esclareci todas as minhas dúvidas.</span></div>
+        <div class="check-item"><input type="checkbox"><span>Informei o terapeuta sobre o meu estado de saúde, medicação e eventuais contraindicações.</span></div>
+        <div class="check-item"><input type="checkbox"><span>Compreendo que os resultados podem variar de pessoa para pessoa e não podem ser garantidos.</span></div>
+        <div class="check-item"><input type="checkbox"><span>Sei que posso interromper a sessão a qualquer momento.</span></div>
+        <div class="check-item"><input type="checkbox"><span>Autorizo, de forma livre e esclarecida, a realização da sessão de Oxigenoterapia Hiperbárica.</span></div>
+      </div>
+
+      <div class="sig-section">
+        <div class="sig-label">Assinatura do Cliente</div>
+        <canvas id="sigCanvas" style="height:140px;display:block"></canvas>
+        <button class="clear-btn" onclick="clearCanvas()">✕ Limpar assinatura</button>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="submit()">✓ Assinar e Submeter</button>
+    `;
+
+    setTimeout(initCanvas, 100);
+
+  } catch (e) {
+    document.getElementById("app").innerHTML = `<div class="error">Erro ao carregar. Por favor tenta novamente.</div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
